@@ -1,0 +1,53 @@
+#version: '3'
+#services:
+#  flask:
+#    build: ./backend
+#    container_name: backend-flask
+#    environment:
+#      - FLASK_ENV=development
+#      - PYTHONUNBUFFERED=True
+#    restart: on-failure
+#    volumes:
+#      - ./backend:/backend
+#    ports:
+#      - "5001:5001"
+#    command: python wsgi.py
+
+version: '3'
+
+services:
+
+  flask:
+    build: .
+    volumes:
+     - .:/app
+    environment:
+      CELERY_BROKER_URL: amqp://broker
+      CELERY_RESULT_BACKEND: redis://result_backend
+    restart: always
+    command: pipenv run gunicorn -b 0.0.0.0:5002 wsgi:app --log-level=INFO
+    ports:
+      - "5002:5002"
+    depends_on:
+     - broker
+     - result_backend
+     - worker
+
+  worker:
+    build: .
+    volumes:
+     - .:/app
+    environment:
+      CELERY_BROKER_URL: amqp://broker
+      CELERY_RESULT_BACKEND: redis://result_backend
+    restart: always
+    command: pipenv run celery worker -A backend.celery -l INFO
+    depends_on:
+     - broker
+     - result_backend
+
+  broker:
+    image: rabbitmq:3.7.7-alpine
+
+  result_backend:
+    image: redis:4.0.11-alpine

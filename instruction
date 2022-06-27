@@ -1,0 +1,11 @@
+Install project
+   sudo docker-compose build
+
+Start project
+   sudo docker-compose up
+
+Exit project
+  Press "Ctrl+C"
+
+Link for site
+   http://0.0.0.0:5002/
